@@ -33,14 +33,7 @@
     firebase.initializeApp(firebaseConfig);
 
     // Fetch all users from database for dropdown
-    firebase.auth().onAuthStateChanged((adminUser) => {
-      if (adminUser) {
-        loadUsers();
-      } else {
-        alert("Please login as admin first");
-        window.location.href = "login.html";
-      }
-    });
+    loadUsers();
 
     function loadUsers() {
       const userSelect = document.getElementById("userSelect");
