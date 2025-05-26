@@ -2324,7 +2324,7 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
 
     <style>
-        /* Global Styles */
+        /* (same CSS as before — no changes) */
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             margin: 0;
@@ -2429,7 +2429,6 @@
             margin-top: 20px;
         }
 
-        /* Transaction History Section */
         .collapsible {
             background-color: #f1f1f1;
             color: #333;
@@ -2492,7 +2491,6 @@
             color: #27ae60;
         }
 
-        /* Mobile responsiveness */
         @media (max-width: 600px) {
             h2 {
                 font-size: 22px;
@@ -2513,12 +2511,10 @@
         }
     </style>
 </head>
-
 <body>
     <h2>Withdrawal Page</h2>
-
     <button class="logout-btn" onclick="logout()">Logout</button>
-    <!-- User Info Section -->
+
     <div class="section">
         <div class="approved-amount" id="approvedAmount">Approved Amount: Loading...</div>
         <div class="info-line" id="userName">Name: Loading...</div>
@@ -2532,7 +2528,6 @@
         Enter the amount you wish to withdraw (up to the approved amount). Click "Submit Withdrawal" and your request will be processed shortly.
     </div>
 
-    <!-- Transaction Form Section -->
     <div class="section">
         <form id="withdrawForm">
             <div class="form-group">
@@ -2545,7 +2540,6 @@
 
     <div id="processingMessage">Processing your request for $<span id="processingAmount"></span>...</div>
 
-    <!-- Collapsible Transaction History Section -->
     <div class="section">
         <button class="collapsible" onclick="toggleTransactionHistory()">Show Transaction History</button>
         <div class="content" id="transactionHistoryContent">
@@ -2558,9 +2552,7 @@
                         <th>Date Paid</th>
                     </tr>
                 </thead>
-                <tbody id="transactionHistoryBody">
-                    <!-- Transaction history data will be populated here -->
-                </tbody>
+                <tbody id="transactionHistoryBody"></tbody>
                 <tfoot>
                     <tr>
                         <td colspan="3">Total for Paid Transactions:</td>
@@ -2570,6 +2562,18 @@
             </table>
         </div>
     </div>
+
+    <!-- Custom Modal -->
+    <div id="customModal" style="display:none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 9999; justify-content: center; align-items: center;">
+        <div style="background: #fff; padding: 30px 20px; border-radius: 8px; max-width: 400px; width: 90%; text-align: center; position: relative;">
+            <p id="customModalText" style="font-size: 16px; color: #333;"></p>
+            <button onclick="closeCustomModal()" style="margin-top: 20px; background-color: #15317E; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer;">OK</button>
+        </div>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 
     <script>
         const firebaseConfig = {
@@ -2583,13 +2587,11 @@
         };
 
         firebase.initializeApp(firebaseConfig);
-
         let userApprovedAmount = 0;
 
         firebase.auth().onAuthStateChanged(function(user) {
             if (user) {
                 const uid = user.uid;
-
                 firebase.database().ref("users/" + uid).once("value").then(snapshot => {
                     const data = snapshot.val();
                     if (data) {
@@ -2597,13 +2599,12 @@
                         document.getElementById("bankName").innerText = "Bank Name: " + (data.bankDetails?.bankName || "N/A");
                         document.getElementById("accountNumber").innerText = "Account Number: " + (data.bankDetails?.accountNumber || "N/A");
                         document.getElementById("routingNumber").innerText = "Routing Number: " + (data.bankDetails?.routingNumber || "N/A");
-
                         const approved = parseFloat(data.approvedAmount || "0");
                         userApprovedAmount = approved;
                         document.getElementById("approvedAmount").innerHTML = `Approved Amount: <span style="color: green;"><strong>$${approved.toFixed(2)}</strong></span>`;
                     }
                 }).catch(error => {
-                    alert("Failed to load user data: " + error.message);
+                    showCustomModal("Failed to load user data: " + error.message);
                 });
 
                 document.getElementById("withdrawForm").addEventListener("submit", function(e) {
@@ -2612,12 +2613,12 @@
                     const amount = parseFloat(amountInput);
 
                     if (isNaN(amount) || amount <= 0) {
-                        alert("Please enter a valid amount.");
+                        showCustomModal("Please enter a valid amount.");
                         return;
                     }
 
                     if (amount > userApprovedAmount) {
-                        alert("Amount exceeds approved limit. Please enter an amount less than or equal to $" + userApprovedAmount.toFixed(2));
+                        showCustomModal("Amount exceeds approved limit. Please enter an amount less than or equal to $" + userApprovedAmount.toFixed(2));
                         return;
                     }
 
@@ -2630,52 +2631,44 @@
                         const fullMessage = "Your withdrawal request of $" + amount.toFixed(2) + " is being processed.\n\n" + customMessage;
 
                         setTimeout(() => {
-                            alert(fullMessage);
+                            showCustomModal(fullMessage);
                             document.getElementById("processingMessage").style.display = "none";
                         }, 2000);
                     }).catch(error => {
-                        alert("Something went wrong: " + error.message);
+                        showCustomModal("Something went wrong: " + error.message);
                         document.getElementById("processingMessage").style.display = "none";
                     });
                 });
 
-                // Fetch and display transaction history
                 firebase.database().ref("users/" + uid + "/transactions").on("value", snapshot => {
                     const transactions = snapshot.val();
                     const transactionHistoryBody = document.getElementById("transactionHistoryBody");
                     const totalPaidAmountElement = document.getElementById("totalPaidAmount");
                     let totalPaidAmount = 0;
-
-                    // Clear the table first
                     transactionHistoryBody.innerHTML = "";
 
                     if (transactions) {
-                        let transactionHistoryHtml = '';
-                        for (const transactionKey in transactions) {
-                            const transaction = transactions[transactionKey];
-                            const amount = parseFloat(transaction.amount);
-                            const status = transaction.status || 'N/A';
+                        let html = '';
+                        for (const key in transactions) {
+                            const t = transactions[key];
+                            const amount = parseFloat(t.amount);
+                            const status = t.status || 'N/A';
+                            if (status === "Paid") totalPaidAmount += amount;
 
-                            // Check if the transaction status is 'Paid' and calculate total
-                            if (status === "Paid") {
-                                totalPaidAmount += amount;
-                            }
-
-                            transactionHistoryHtml += `
+                            html += `
                                 <tr>
-                                    <td>${transaction.type || 'N/A'}</td>
+                                    <td>${t.type || 'N/A'}</td>
                                     <td>$${amount.toFixed(2)}</td>
                                     <td>${status}</td>
-                                    <td>${transaction.datePaid || 'N/A'}</td>
+                                    <td>${t.datePaid || 'N/A'}</td>
                                 </tr>
                             `;
                         }
-                        transactionHistoryBody.innerHTML = transactionHistoryHtml;
+                        transactionHistoryBody.innerHTML = html;
                     } else {
                         transactionHistoryBody.innerHTML = '<tr><td colspan="4">No transactions found.</td></tr>';
                     }
 
-                    // Update the total in the table
                     totalPaidAmountElement.textContent = `$${totalPaidAmount.toFixed(2)}`;
                 });
 
@@ -2693,6 +2686,15 @@
         function toggleTransactionHistory() {
             const content = document.getElementById("transactionHistoryContent");
             content.style.display = content.style.display === "block" ? "none" : "block";
+        }
+
+        function showCustomModal(message) {
+            document.getElementById('customModalText').innerText = message;
+            document.getElementById('customModal').style.display = 'flex';
+        }
+
+        function closeCustomModal() {
+            document.getElementById('customModal').style.display = 'none';
         }
     </script>
 
