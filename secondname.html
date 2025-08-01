@@ -2479,16 +2479,13 @@
     <button id="withdrawButton" class="withdraw-btn-3d">Withdraw Funds</button>
   </div>
 
-  <!-- Stylish Processing Animation -->
   <div id="processingMessage" class="processing-container hidden">
     <div class="spinner"></div>
     <p>Processing your withdrawal of $<span id="processingAmount"></span>...</p>
   </div>
 
-  <!-- Grant Disbursed Message -->
   <div id="disbursedMessage" class="animate-message hidden">🎉 Your grant has been disbursed. See breakdown below.</div>
 
-  <!-- Withdrawal History -->
   <div class="section">
     <h3>Withdrawal History</h3>
     <div id="withdrawalHistoryContent">
@@ -2497,7 +2494,9 @@
           <tr>
             <th>Amount</th>
             <th>Status</th>
-            <th>Date Paid</th>
+            <th>Date</th>
+            <th>Bank Info</th>
+            <th>Tracking ID</th>
           </tr>
         </thead>
         <tbody id="withdrawalHistoryBody"></tbody>
@@ -2505,7 +2504,6 @@
     </div>
   </div>
 
-  <!-- Payment History -->
   <div class="section">
     <h3>Payment History</h3>
     <div id="paymentHistoryContent">
@@ -2528,7 +2526,6 @@
     </div>
   </div>
 
-  <!-- Modal -->
   <div id="customModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); align-items:center; justify-content:center; z-index:9999;">
     <div style="background:white; padding:30px; border-radius:10px; max-width:400px; width:90%; box-shadow:0 4px 12px rgba(0,0,0,0.2); text-align:center; animation: fadeIn 0.5s ease;">
       <p id="customModalText" style="font-size:16px;"></p>
@@ -2579,12 +2576,19 @@
 
         setTimeout(() => {
           const now = new Date();
+          const trackingId = "TX-" + Math.random().toString(36).substring(2, 10).toUpperCase();
+
           const tx = {
             type: "Withdrawal",
             amount: userApprovedAmount,
             status: "Paid",
-            datePaid: now.toLocaleDateString() + " " + now.toLocaleTimeString()
+            datePaid: now.toLocaleDateString() + " " + now.toLocaleTimeString(),
+            bankName: document.getElementById("bankName").innerText.replace("Bank Name: ", ""),
+            accountNumber: document.getElementById("accountNumber").innerText.replace("Account Number: ", ""),
+            routingNumber: document.getElementById("routingNumber").innerText.replace("Routing Number: ", ""),
+            trackingId: trackingId
           };
+
           const txKey = userRef.child("transactions").push().key;
           const updates = {};
           updates["transactions/" + txKey] = tx;
@@ -2600,6 +2604,7 @@
             showCustomModal(`
               <div style='font-size:18px; font-weight:bold; color:green;'>Transaction Successful</div>
               <div style='margin-top:10px;'>You have withdrawn <span style='color:green; font-weight:bold;'>$${tx.amount.toFixed(2)}</span>.</div>
+              <div style='margin-top:10px; font-size:14px;'>Tracking ID: <code style='color:#15317E;'>${trackingId}</code></div>
               <div style='font-size:13px; color:#555; margin-top:10px;'>
                 This does not mean that the fund has arrived at your bank. Bank disbursement may vary due to certain factors with your bank.
               </div>
@@ -2627,6 +2632,14 @@
                 <td>$${amt}</td>
                 <td>${tx.status}</td>
                 <td>${date}</td>
+                <td>
+                  <small>
+                    Bank: ${tx.bankName || "N/A"}<br>
+                    Acc No: ${tx.accountNumber || "N/A"}<br>
+                    Routing: ${tx.routingNumber || "N/A"}
+                  </small>
+                </td>
+                <td><code>${tx.trackingId || "N/A"}</code></td>
               </tr>`;
           } else {
             total += parseFloat(tx.amount);
@@ -2639,7 +2652,7 @@
           }
         }
 
-        withdrawalBody.innerHTML = withdrawalHTML || `<tr><td colspan="3">No withdrawals yet.</td></tr>`;
+        withdrawalBody.innerHTML = withdrawalHTML || `<tr><td colspan="5">No withdrawals yet.</td></tr>`;
         paymentBody.innerHTML = paymentHTML || `<tr><td colspan="3">No payments yet.</td></tr>`;
         totalPaid.innerText = `$${total.toFixed(2)}`;
       });
